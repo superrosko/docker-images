@@ -95,15 +95,6 @@ RUN apt-get update \
 
 RUN apt-get update \
     && apt-get install -y \
-        librabbitmq-dev \
-        librabbitmq4 \
-    && pecl install amqp \
-    && docker-php-ext-enable amqp \
-    && apt-get purge -y \
-        librabbitmq-dev
-
-RUN apt-get update \
-    && apt-get install -y \
     && pecl install redis \
     && docker-php-ext-enable redis
 
