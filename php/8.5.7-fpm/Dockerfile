@@ -26,6 +26,18 @@ RUN set -eux; \
         procps \
         dnsutils \
         nano \
+        libfreetype6 \
+        libgmp10 \
+        libhashkit2 \
+        libicu76 \
+        libjpeg62-turbo \
+        libmemcached11 \
+        libmemcached-dev \
+        libpng16-16 \
+        libpq5 \
+        libsasl2-2 \
+        libzip5 \
+        zlib1g \
         $PHPIZE_DEPS \
         build-essential \
         libpq-dev \
@@ -89,6 +101,18 @@ RUN set -eux; \
         procps \
         dnsutils \
         nano \
+        libfreetype6 \
+        libgmp10 \
+        libhashkit2 \
+        libicu76 \
+        libjpeg62-turbo \
+        libmemcached11 \
+        libmemcached-dev \
+        libpng16-16 \
+        libpq5 \
+        libsasl2-2 \
+        libzip5 \
+        zlib1g \
     ; \
     ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
         | awk '/=>/ { print $3 }' \
@@ -100,6 +124,17 @@ RUN set -eux; \
     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
     rm -f /tmp/saved-apt-mark; \
     rm -rf /var/lib/apt/lists/*
+
+# Keep libmemcached runtime libraries after build dependency cleanup
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends libmemcached-dev; \
+    rm -rf /var/lib/apt/lists/*
+
+# Verify installed extensions
+RUN set -eux; \
+    php -v; \
+    php -r '$extensions = ["bcmath", "gd", "gmp", "igbinary", "intl", "memcached", "mongodb", "msgpack", "pcntl", "pdo_mysql", "pdo_pgsql", "redis", "xdebug", "zip"]; foreach ($extensions as $extension) { if (!extension_loaded($extension)) { fwrite(STDERR, "Missing PHP extension: $extension\n"); exit(1); } }'
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
