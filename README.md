@@ -18,7 +18,7 @@ Build an image from the repository root and tag it with the same directory
 name:
 
 ```bash
-docker build -t superrosko/php:8.5.7-fpm php/8.5.7-fpm
+docker build -t superrosko/php:8.5.12-fpm php/8.5.12-fpm
 docker build -t superrosko/node:26.4.0-alpine node/26.4.0-alpine
 docker build -t superrosko/alpine:3.22.0-alpine alpine/3.22.0-alpine
 ```
@@ -26,8 +26,8 @@ docker build -t superrosko/alpine:3.22.0-alpine alpine/3.22.0-alpine
 Run a quick smoke check after building:
 
 ```bash
-docker run --rm superrosko/php:8.5.7-fpm php -v
-docker run --rm superrosko/php:8.5.7-fpm php -m
+docker run --rm superrosko/php:8.5.12-fpm php -v
+docker run --rm superrosko/php:8.5.12-fpm php -m
 docker run --rm superrosko/node:26.4.0-alpine node -v
 ```
 
@@ -39,11 +39,22 @@ Login to Docker Hub:
 docker login
 ```
 
-Build and push the PHP 8.5.7 FPM image:
+Build and push the PHP 8.5.12 FPM image:
 
 ```bash
-docker build -t superrosko/php:8.5.7-fpm php/8.5.7-fpm
-docker push superrosko/php:8.5.7-fpm
+docker build --pull -t superrosko/php:8.5.12-fpm php/8.5.12-fpm
+docker push superrosko/php:8.5.12-fpm
+```
+
+Build, verify, and push every supported PHP image:
+
+```bash
+for VERSION in 8.2.35 8.3.36 8.4.27 8.5.12; do
+  IMAGE="superrosko/php:${VERSION}-fpm"
+  docker build --pull -t "$IMAGE" "php/${VERSION}-fpm"
+  docker run --rm "$IMAGE" php -v
+  docker push "$IMAGE"
+done
 ```
 
 The same command shape works for the other image families:
@@ -59,8 +70,8 @@ docker push superrosko/alpine:3.22.0-alpine
 For repeatable releases, set the image name once:
 
 ```bash
-IMAGE=superrosko/php:8.5.7-fpm
-CONTEXT=php/8.5.7-fpm
+IMAGE=superrosko/php:8.5.12-fpm
+CONTEXT=php/8.5.12-fpm
 
 docker build -t "$IMAGE" "$CONTEXT"
 docker run --rm "$IMAGE" php -v
@@ -70,23 +81,57 @@ docker push "$IMAGE"
 ## Tagging
 
 Image tags match the source directory name. For example,
-`php/8.5.7-fpm/Dockerfile` is built as:
+`php/8.5.12-fpm/Dockerfile` is built as:
 
 ```text
-superrosko/php:8.5.7-fpm
+superrosko/php:8.5.12-fpm
 ```
 
 Use exact upstream versions in tags instead of moving aliases so builds stay
 predictable.
 
-## PHP 8.5.7 FPM
+## PHP FPM
 
-The `superrosko/php:8.5.7-fpm` image is based on `php:8.5.7-fpm` and includes:
+Supported, security-patched image tags:
+
+- `8.2.35-fpm`
+- `8.3.36-fpm`
+- `8.4.27-fpm`
+- `8.5.12-fpm`
+
+All PHP images include:
 
 - System tools: `zip`, `unzip`, `git`, `curl`, `locales`, `procps`, `dnsutils`, `nano`.
 - PHP extensions: `opcache`, `pdo_mysql`, `pdo_pgsql`, `bcmath`, `pcntl`, `zip`, `gmp`, `intl`, `gd`.
-- PECL extensions: `xdebug`, `redis`, `memcached`, `mongodb`.
+- PECL extensions: `xdebug`, `redis`, `igbinary`, `msgpack`, `memcached`, `mongodb`.
 - Composer installed as `/usr/local/bin/composer`.
+
+## Security cleanup
+
+On each supported PHP branch, versions before `8.2.35`, `8.3.36`, `8.4.27`,
+and `8.5.12` are affected by
+[GHSA-w8hw-w9fx-j79w](https://github.com/php/php-src/security/advisories/GHSA-w8hw-w9fx-j79w)
+and
+[GHSA-6wmf-4rv5-p3rp](https://github.com/php/php-src/security/advisories/GHSA-6wmf-4rv5-p3rp).
+The vulnerable and end-of-life Dockerfiles have been removed from this
+repository.
+
+After all consumers have moved to the patched tags, delete these old tags from
+the `superrosko/php` repository on Docker Hub:
+
+```text
+7.4-fpm
+7.4.13-fpm
+8.0.0-fpm
+8.0.6-fpm
+8.1.6-fpm
+8.2.13-fpm
+8.3.20-fpm
+8.5.7-fpm
+```
+
+Restart or recreate every running PHP-FPM container after rollout so no worker
+continues running vulnerable PHP code.
 
 ## Credits
 
