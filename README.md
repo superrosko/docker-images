@@ -19,7 +19,7 @@ name:
 
 ```bash
 docker build -t superrosko/php:8.5.12-fpm php/8.5.12-fpm
-docker build -t superrosko/node:26.4.0-alpine node/26.4.0-alpine
+docker build -t superrosko/node:26.12.1-alpine node/26.12.1-alpine
 docker build -t superrosko/alpine:3.22.0-alpine alpine/3.22.0-alpine
 ```
 
@@ -28,7 +28,7 @@ Run a quick smoke check after building:
 ```bash
 docker run --rm superrosko/php:8.5.12-fpm php -v
 docker run --rm superrosko/php:8.5.12-fpm php -m
-docker run --rm superrosko/node:26.4.0-alpine node -v
+docker run --rm superrosko/node:26.12.1-alpine node -v
 ```
 
 ## Docker Hub
@@ -60,8 +60,12 @@ done
 The same command shape works for the other image families:
 
 ```bash
-docker build -t superrosko/node:26.4.0-alpine node/26.4.0-alpine
-docker push superrosko/node:26.4.0-alpine
+for VERSION in 22.23.4 24.22.1 26.12.1; do
+  IMAGE="superrosko/node:${VERSION}-alpine"
+  docker build --pull -t "$IMAGE" "node/${VERSION}-alpine"
+  docker run --rm "$IMAGE" node -v
+  docker push "$IMAGE"
+done
 
 docker build -t superrosko/alpine:3.22.0-alpine alpine/3.22.0-alpine
 docker push superrosko/alpine:3.22.0-alpine
@@ -90,6 +94,16 @@ superrosko/php:8.5.12-fpm
 Use exact upstream versions in tags instead of moving aliases so builds stay
 predictable.
 
+## Node.js
+
+Supported, security-patched image tags:
+
+- `22.23.4-alpine`
+- `24.22.1-alpine`
+- `26.12.1-alpine`
+
+All Node.js images include npm 11.18.0 and Git.
+
 ## PHP FPM
 
 Supported, security-patched image tags:
@@ -107,6 +121,8 @@ All PHP images include:
 - Composer installed as `/usr/local/bin/composer`.
 
 ## Security cleanup
+
+### PHP2Shell
 
 On each supported PHP branch, versions before `8.2.35`, `8.3.36`, `8.4.27`,
 and `8.5.12` are affected by
@@ -132,6 +148,30 @@ the `superrosko/php` repository on Docker Hub:
 
 Restart or recreate every running PHP-FPM container after rollout so no worker
 continues running vulnerable PHP code.
+
+### Broccoli2Shell / Node2Shell
+
+Node.js versions before `22.23.4`, `24.22.1`, and `26.12.1` are affected by
+[CVE-2026-111497](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases),
+an out-of-bounds write in the bundled Brotli decoder that can lead to remote
+code execution. The vulnerable and end-of-life Node.js Dockerfiles have been
+removed from this repository.
+
+After all consumers have moved to the patched tags, delete these old tags from
+the `superrosko/node` repository on Docker Hub:
+
+```text
+12.16.1-alpine
+14.15.1-alpine
+14.17.0-alpine
+14.17.6-alpine
+16.15.0-alpine
+25.9.0-alpine
+26.4.0-alpine
+```
+
+Restart or recreate every running Node.js container after rollout so no process
+continues using the vulnerable decoder.
 
 ## Credits
 
