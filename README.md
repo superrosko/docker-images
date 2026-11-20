@@ -33,29 +33,37 @@ docker run --rm superrosko/node:26.12.1-alpine node -v
 
 ## Docker Hub
 
-Login to Docker Hub:
+Docker Hub tags use the `superrosko` namespace. On the project WSL2 runtime,
+images are built by the `codex` user, while Docker Hub credentials are stored
+for the `rosko` user. Do not copy credentials between users or store credentials
+in this repository.
 
-```bash
-docker login
-```
-
-Build and push the PHP 8.5.13 FPM image:
+Build and verify images as `codex`, then push them as `rosko`:
 
 ```bash
 docker build --pull -t superrosko/php:8.5.13-fpm php/8.5.13-fpm
-docker push superrosko/php:8.5.13-fpm
+docker run --rm superrosko/php:8.5.13-fpm php -v
+sudo -u rosko docker push superrosko/php:8.5.13-fpm
 ```
 
-Build, verify, and push every supported PHP image:
+The complete PHP release sequence is:
 
 ```bash
 for VERSION in 8.2.36 8.3.37 8.4.28 8.5.13; do
   IMAGE="superrosko/php:${VERSION}-fpm"
   docker build --pull -t "$IMAGE" "php/${VERSION}-fpm"
-  docker run --rm "$IMAGE" php -v
-  docker push "$IMAGE"
+  ACTUAL_VERSION="$(docker run --rm "$IMAGE" php -r 'echo PHP_VERSION;')"
+  test "$ACTUAL_VERSION" = "$VERSION"
+done
+
+for VERSION in 8.2.36 8.3.37 8.4.28 8.5.13; do
+  sudo -u rosko docker push "superrosko/php:${VERSION}-fpm"
 done
 ```
+
+Run the second loop interactively so `sudo` can request a password without
+placing it in shell history, scripts, or process arguments. Record the digest
+printed for every pushed tag.
 
 The same command shape works for the other image families:
 
@@ -64,11 +72,11 @@ for VERSION in 22.23.4 24.22.1 26.12.1; do
   IMAGE="superrosko/node:${VERSION}-alpine"
   docker build --pull -t "$IMAGE" "node/${VERSION}-alpine"
   docker run --rm "$IMAGE" node -v
-  docker push "$IMAGE"
+  sudo -u rosko docker push "$IMAGE"
 done
 
 docker build -t superrosko/alpine:3.22.0-alpine alpine/3.22.0-alpine
-docker push superrosko/alpine:3.22.0-alpine
+sudo -u rosko docker push superrosko/alpine:3.22.0-alpine
 ```
 
 For repeatable releases, set the image name once:
@@ -79,7 +87,7 @@ CONTEXT=php/8.5.13-fpm
 
 docker build -t "$IMAGE" "$CONTEXT"
 docker run --rm "$IMAGE" php -v
-docker push "$IMAGE"
+sudo -u rosko docker push "$IMAGE"
 ```
 
 ## Tagging
