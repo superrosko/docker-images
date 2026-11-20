@@ -1,4 +1,4 @@
-FROM php:8.2.35-fpm
+FROM php:8.2.36-fpm
 LABEL maintainer="Dmitriy Bespalov <dbespalov.rosko@gmail.com>"
 
 ENV XDEBUG_VERSION=3.5.3 \

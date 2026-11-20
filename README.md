@@ -18,7 +18,7 @@ Build an image from the repository root and tag it with the same directory
 name:
 
 ```bash
-docker build -t superrosko/php:8.5.12-fpm php/8.5.12-fpm
+docker build -t superrosko/php:8.5.13-fpm php/8.5.13-fpm
 docker build -t superrosko/node:26.12.1-alpine node/26.12.1-alpine
 docker build -t superrosko/alpine:3.22.0-alpine alpine/3.22.0-alpine
 ```
@@ -26,8 +26,8 @@ docker build -t superrosko/alpine:3.22.0-alpine alpine/3.22.0-alpine
 Run a quick smoke check after building:
 
 ```bash
-docker run --rm superrosko/php:8.5.12-fpm php -v
-docker run --rm superrosko/php:8.5.12-fpm php -m
+docker run --rm superrosko/php:8.5.13-fpm php -v
+docker run --rm superrosko/php:8.5.13-fpm php -m
 docker run --rm superrosko/node:26.12.1-alpine node -v
 ```
 
@@ -39,17 +39,17 @@ Login to Docker Hub:
 docker login
 ```
 
-Build and push the PHP 8.5.12 FPM image:
+Build and push the PHP 8.5.13 FPM image:
 
 ```bash
-docker build --pull -t superrosko/php:8.5.12-fpm php/8.5.12-fpm
-docker push superrosko/php:8.5.12-fpm
+docker build --pull -t superrosko/php:8.5.13-fpm php/8.5.13-fpm
+docker push superrosko/php:8.5.13-fpm
 ```
 
 Build, verify, and push every supported PHP image:
 
 ```bash
-for VERSION in 8.2.35 8.3.36 8.4.27 8.5.12; do
+for VERSION in 8.2.36 8.3.37 8.4.28 8.5.13; do
   IMAGE="superrosko/php:${VERSION}-fpm"
   docker build --pull -t "$IMAGE" "php/${VERSION}-fpm"
   docker run --rm "$IMAGE" php -v
@@ -74,8 +74,8 @@ docker push superrosko/alpine:3.22.0-alpine
 For repeatable releases, set the image name once:
 
 ```bash
-IMAGE=superrosko/php:8.5.12-fpm
-CONTEXT=php/8.5.12-fpm
+IMAGE=superrosko/php:8.5.13-fpm
+CONTEXT=php/8.5.13-fpm
 
 docker build -t "$IMAGE" "$CONTEXT"
 docker run --rm "$IMAGE" php -v
@@ -85,10 +85,10 @@ docker push "$IMAGE"
 ## Tagging
 
 Image tags match the source directory name. For example,
-`php/8.5.12-fpm/Dockerfile` is built as:
+`php/8.5.13-fpm/Dockerfile` is built as:
 
 ```text
-superrosko/php:8.5.12-fpm
+superrosko/php:8.5.13-fpm
 ```
 
 Use exact upstream versions in tags instead of moving aliases so builds stay
@@ -108,10 +108,10 @@ All Node.js images include npm 11.18.0 and Git.
 
 Supported, security-patched image tags:
 
-- `8.2.35-fpm`
-- `8.3.36-fpm`
-- `8.4.27-fpm`
-- `8.5.12-fpm`
+- `8.2.36-fpm`
+- `8.3.37-fpm`
+- `8.4.28-fpm`
+- `8.5.13-fpm`
 
 All PHP images include:
 
@@ -121,6 +121,27 @@ All PHP images include:
 - Composer installed as `/usr/local/bin/composer`.
 
 ## Security cleanup
+
+### November 2026 security release
+
+PHP `8.2.36`, `8.3.37`, `8.4.28`, and `8.5.13` contain fixes for seven
+critical vulnerabilities affecting PHP-FPM request handling, sessions, and
+memory management. See the [PHP 8 changelog](https://www.php.net/ChangeLog-8.php)
+and the [SecurityLab summary](https://www.securitylab.ru/news/580378.php).
+
+The previous image tags are vulnerable and have been removed from this
+repository:
+
+```text
+8.2.35-fpm
+8.3.36-fpm
+8.4.27-fpm
+8.5.12-fpm
+```
+
+After every consumer has moved to a patched tag, delete these tags from the
+`superrosko/php` repository on Docker Hub. Restart or recreate every PHP-FPM
+container during rollout so no vulnerable worker remains active.
 
 ### PHP2Shell
 
